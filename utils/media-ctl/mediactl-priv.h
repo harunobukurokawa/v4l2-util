@@ -42,6 +42,7 @@ struct media_device {
 	int fd;
 	int refcount;
 	char *devnode;
+	__u32 request;
 
 	struct media_device_info info;
 	struct media_entity *entities;

@@ -75,7 +75,8 @@ int v4l2_subdev_get_format(struct media_entity *entity,
 
 	memset(&fmt, 0, sizeof(fmt));
 	fmt.pad = pad;
-	fmt.which = which;
+	fmt.which = entity->media->request ? V4L2_SUBDEV_FORMAT_ACTIVE : which;
+	fmt.request = entity->media->request;
 
 	ret = ioctl(entity->fd, VIDIOC_SUBDEV_G_FMT, &fmt);
 	if (ret < 0)
@@ -98,7 +99,8 @@ int v4l2_subdev_set_format(struct media_entity *entity,
 
 	memset(&fmt, 0, sizeof(fmt));
 	fmt.pad = pad;
-	fmt.which = which;
+	fmt.which = entity->media->request ? V4L2_SUBDEV_FORMAT_ACTIVE : which;
+	fmt.request = entity->media->request;
 	fmt.format = *format;
 
 	ret = ioctl(entity->fd, VIDIOC_SUBDEV_S_FMT, &fmt);
@@ -126,7 +128,8 @@ int v4l2_subdev_get_selection(struct media_entity *entity,
 	memset(&u.sel, 0, sizeof(u.sel));
 	u.sel.pad = pad;
 	u.sel.target = target;
-	u.sel.which = which;
+	u.sel.which = entity->media->request ? V4L2_SUBDEV_FORMAT_ACTIVE : which;
+	u.sel.request = entity->media->request;
 
 	ret = ioctl(entity->fd, VIDIOC_SUBDEV_G_SELECTION, &u.sel);
 	if (ret >= 0) {
@@ -165,7 +168,8 @@ int v4l2_subdev_set_selection(struct media_entity *entity,
 	memset(&u.sel, 0, sizeof(u.sel));
 	u.sel.pad = pad;
 	u.sel.target = target;
-	u.sel.which = which;
+	u.sel.which = entity->media->request ? V4L2_SUBDEV_FORMAT_ACTIVE : which;
+	u.sel.request = entity->media->request;
 	u.sel.r = *rect;
 
 	ret = ioctl(entity->fd, VIDIOC_SUBDEV_S_SELECTION, &u.sel);
@@ -631,8 +635,8 @@ static int set_frame_interval(struct media_entity *entity,
 }
 
 
-static int v4l2_subdev_parse_setup_format(struct media_device *media,
-					  const char *p, char **endp)
+int v4l2_subdev_parse_setup_format(struct media_device *media,
+				   const char *p, char **endp)
 {
 	struct v4l2_mbus_framefmt format = { 0, 0, 0 };
 	struct media_pad *pad;

@@ -35,6 +35,7 @@ struct media_options
 	const char *links;
 	const char *fmt_pad;
 	const char *dv_pad;
+	int request_id;
 };
 
 extern struct media_options media_opts;

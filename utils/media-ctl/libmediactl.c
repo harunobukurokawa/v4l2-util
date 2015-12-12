@@ -203,10 +203,10 @@ static int media_device_open(struct media_device *media)
 
 static void media_device_close(struct media_device *media)
 {
-	if (media->fd != -1) {
+/*	if (media->fd != -1) {
 		close(media->fd);
 		media->fd = -1;
-	}
+	} */
 }
 
 /* -----------------------------------------------------------------------------
@@ -969,4 +969,62 @@ int media_parse_setup_links(struct media_device *media, const char *p)
 	} while (*end == ',');
 
 	return *end ? -EINVAL : 0;
+}
+
+__u32 media_device_get_request(struct media_device *media)
+{
+	return media->request;
+}
+
+int media_device_set_request(struct media_device *media, __u32 request)
+{
+	media->request = request;
+
+	return 0;
+}
+
+int media_device_alloc_request(struct media_device *media)
+{
+	struct media_request_cmd cmd;
+	int ret;
+
+	memset(&cmd, 0, sizeof(cmd));
+	cmd.cmd = MEDIA_REQ_CMD_ALLOC;
+
+	ret = ioctl(media->fd, MEDIA_IOC_REQUEST_CMD, &cmd);
+	if (ret == -1) {
+		ret = -errno;
+		media_dbg(media, "%s: Unable to allocate request (%s)\n",
+			  __func__, strerror(errno));
+		return ret;
+	}
+
+	media->request = cmd.request;
+
+	return 0;
+}
+
+int media_device_queue_request(struct media_device *media)
+{
+	struct media_request_cmd cmd;
+	int ret;
+
+	if (!media->request)
+		return -EINVAL;
+
+	memset(&cmd, 0, sizeof(cmd));
+	cmd.cmd = MEDIA_REQ_CMD_QUEUE;
+	cmd.request = media->request;
+
+	ret = ioctl(media->fd, MEDIA_IOC_REQUEST_CMD, &cmd);
+	if (ret == -1) {
+		ret = -errno;
+		media_dbg(media, "%s: Unable to queue request (%s)\n",
+			  __func__, strerror(errno));
+		return ret;
+	}
+
+	media->request = 0;
+
+	return 0;
 }

@@ -504,6 +504,32 @@ void media_print_topology(struct media_device *media, int dot)
 		media_print_topology_text(media);
 }
 
+static int media_parse_execute_request(struct media_device *media, const char *p)
+{
+	int ret;
+
+	if (strncmp(p, "req:", 4))
+		return -EINVAL;
+
+	p += 4;
+
+	if (strncmp(p, "alloc", 5) == 0 && (isspace(p[5]) || !*p)) {
+		ret = media_device_alloc_request(media);
+		if (ret < 0)
+			printf("Failed to allocate request: %d\n", ret);
+
+		printf("Media request ID %u\n", media_device_get_request(media));
+	} else if (strncmp(p, "queue", 5) == 0 && (isspace(p[5]) || !*p)) {
+		ret = media_device_queue_request(media);
+		if (ret < 0)
+			printf("Failed to queue request: %d\n", ret);
+	} else {
+		printf("Invalid request command `%s'\n", p);
+	}
+
+	return 0;
+}
+
 int main(int argc, char **argv)
 {
 	struct media_device *media;
@@ -550,6 +576,18 @@ int main(int argc, char **argv)
 		       (info->driver_version >> 16) & 0xff,
 		       (info->driver_version >> 8) & 0xff,
 		       (info->driver_version >> 0) & 0xff);
+	}
+
+	if (media_opts.request_id == -1) {
+		ret = media_device_alloc_request(media);
+		if (ret < 0) {
+			printf("Failed to allocate request: %d\n", ret);
+			goto out;
+		}
+
+		printf("Media request ID %u\n", media_device_get_request(media));
+	} else if (media_opts.request_id) {
+		media_device_set_request(media, media_opts.request_id);
 	}
 
 	if (media_opts.entity) {
@@ -638,7 +676,7 @@ int main(int argc, char **argv)
 
 	if (media_opts.interactive) {
 		while (1) {
-			char buffer[32];
+			char buffer[256];
 			char *end;
 
 			printf("Enter a link to modify or enter to stop\n");
@@ -648,10 +686,20 @@ int main(int argc, char **argv)
 			if (buffer[0] == '\n')
 				break;
 
+			ret = media_parse_execute_request(media, buffer);
+			if (!ret)
+				continue;
+
 			ret = media_parse_setup_link(media, buffer, &end);
-			if (ret)
-				printf("Unable to parse link: %s (%d)\n",
-				       strerror(-ret), -ret);
+			if (!ret)
+				continue;
+
+			ret = v4l2_subdev_parse_setup_format(media, buffer, &end);
+			if (!ret)
+				continue;
+
+			printf("Unable to parse command `%s': %s (%d)\n",
+			       buffer, strerror(-ret), -ret);
 		}
 	}
 
