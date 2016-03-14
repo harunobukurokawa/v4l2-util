@@ -523,6 +523,10 @@ static int media_parse_execute_request(struct media_device *media, const char *p
 		ret = media_device_queue_request(media);
 		if (ret < 0)
 			printf("Failed to queue request: %d\n", ret);
+	} else if (strncmp(p, "delete", 6) == 0 && (isspace(p[6]) || !*p)) {
+		ret = media_device_delete_request(media);
+		if (ret < 0)
+			printf("Failed to delete request: %d\n", ret);
 	} else {
 		printf("Invalid request command `%s'\n", p);
 	}

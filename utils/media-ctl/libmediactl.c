@@ -1028,3 +1028,28 @@ int media_device_queue_request(struct media_device *media)
 
 	return 0;
 }
+
+int media_device_delete_request(struct media_device *media)
+{
+	struct media_request_cmd cmd;
+	int ret;
+
+	if (!media->request)
+		return -EINVAL;
+
+	memset(&cmd, 0, sizeof(cmd));
+	cmd.cmd = MEDIA_REQ_CMD_DELETE;
+	cmd.request = media->request;
+
+	ret = ioctl(media->fd, MEDIA_IOC_REQUEST_CMD, &cmd);
+	if (ret == -1) {
+		ret = -errno;
+		media_dbg(media, "%s: Unable to delete request (%s)\n",
+			  __func__, strerror(errno));
+		return ret;
+	}
+
+	media->request = 0;
+
+	return 0;
+}
