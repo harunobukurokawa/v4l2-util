@@ -23,7 +23,9 @@
 #ifndef __LINUX_MEDIA_H
 #define __LINUX_MEDIA_H
 
+#ifndef __KERNEL__
 #include <stdint.h>
+#endif
 #include <linux/ioctl.h>
 #include <linux/types.h>
 #include <linux/version.h>
@@ -93,12 +95,29 @@ struct media_device_info {
 #define MEDIA_ENT_F_AUDIO_MIXER		(MEDIA_ENT_F_BASE + 0x03003)
 
 /*
+ * Processing entities
+ */
+#define MEDIA_ENT_F_PROC_VIDEO_GENERIC		(MEDIA_ENT_F_BASE + 0x4001)
+#define MEDIA_ENT_F_PROC_VIDEO_COMPOSER		(MEDIA_ENT_F_BASE + 0x4002)
+#define MEDIA_ENT_F_PROC_VIDEO_CONVERTER	(MEDIA_ENT_F_BASE + 0x4003)
+#define MEDIA_ENT_F_PROC_VIDEO_SCALER		(MEDIA_ENT_F_BASE + 0x4004)
+#define MEDIA_ENT_F_PROC_VIDEO_STATISTICS	(MEDIA_ENT_F_BASE + 0x4005)
+
+/*
  * Connectors
  */
 /* It is a responsibility of the entity drivers to add connectors and links */
+#ifdef __KERNEL__
+	/*
+	 * For now, it should not be used in userspace, as some
+	 * definitions may change
+	 */
+
 #define MEDIA_ENT_F_CONN_RF		(MEDIA_ENT_F_BASE + 0x30001)
 #define MEDIA_ENT_F_CONN_SVIDEO		(MEDIA_ENT_F_BASE + 0x30002)
 #define MEDIA_ENT_F_CONN_COMPOSITE	(MEDIA_ENT_F_BASE + 0x30003)
+
+#endif
 
 /*
  * Don't touch on those. The ranges MEDIA_ENT_F_OLD_BASE and
@@ -130,6 +149,7 @@ struct media_device_info {
 
 #define MEDIA_ENT_F_V4L2_SUBDEV_UNKNOWN	MEDIA_ENT_F_OLD_SUBDEV_BASE
 
+#ifndef __KERNEL__
 
 /*
  * Legacy symbols used to avoid userspace compilation breakages
@@ -156,6 +176,7 @@ struct media_device_info {
 #define MEDIA_ENT_T_V4L2_SUBDEV_LENS	MEDIA_ENT_F_LENS
 #define MEDIA_ENT_T_V4L2_SUBDEV_DECODER	MEDIA_ENT_F_ATV_DECODER
 #define MEDIA_ENT_T_V4L2_SUBDEV_TUNER	MEDIA_ENT_F_TUNER
+#endif
 
 /* Entity flags */
 #define MEDIA_ENT_FL_DEFAULT		(1 << 0)
@@ -250,7 +271,8 @@ struct media_link_desc {
 	struct media_pad_desc source;
 	struct media_pad_desc sink;
 	__u32 flags;
-	__u32 reserved[2];
+	__u32 request;
+	__u32 reserved;
 };
 
 struct media_links_enum {
@@ -315,14 +337,14 @@ struct media_v2_entity {
 	__u32 id;
 	char name[64];		/* FIXME: move to a property? (RFC says so) */
 	__u32 function;		/* Main function of the entity */
-	__u16 reserved[12];
-};
+	__u32 reserved[6];
+} __attribute__ ((packed));
 
 /* Should match the specific fields at media_intf_devnode */
 struct media_v2_intf_devnode {
 	__u32 major;
 	__u32 minor;
-};
+} __attribute__ ((packed));
 
 struct media_v2_interface {
 	__u32 id;
@@ -334,22 +356,22 @@ struct media_v2_interface {
 		struct media_v2_intf_devnode devnode;
 		__u32 raw[16];
 	};
-};
+} __attribute__ ((packed));
 
 struct media_v2_pad {
 	__u32 id;
 	__u32 entity_id;
 	__u32 flags;
-	__u16 reserved[9];
-};
+	__u32 reserved[5];
+} __attribute__ ((packed));
 
 struct media_v2_link {
 	__u32 id;
 	__u32 source_id;
 	__u32 sink_id;
 	__u32 flags;
-	__u32 reserved[5];
-};
+	__u32 reserved[6];
+} __attribute__ ((packed));
 
 struct media_v2_topology {
 	__u64 topology_version;
@@ -369,9 +391,7 @@ struct media_v2_topology {
 	__u32 num_links;
 	__u32 reserved4;
 	__u64 ptr_links;
-};
-
-/* ioctls */
+} __attribute__ ((packed));
 
 #define MEDIA_REQ_CMD_ALLOC		0
 #define MEDIA_REQ_CMD_DELETE		1
@@ -383,6 +403,8 @@ struct media_request_cmd {
 	__u32 request;
 	__u32 reserved[9];
 };
+
+/* ioctls */
 
 #define MEDIA_IOC_DEVICE_INFO		_IOWR('|', 0x00, struct media_device_info)
 #define MEDIA_IOC_ENUM_ENTITIES		_IOWR('|', 0x01, struct media_entity_desc)
