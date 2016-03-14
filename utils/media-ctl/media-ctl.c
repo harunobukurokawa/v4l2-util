@@ -683,8 +683,11 @@ int main(int argc, char **argv)
 			if (fgets(buffer, sizeof buffer, stdin) == NULL)
 				break;
 
-			if (buffer[0] == '\n')
+			if (buffer[0] == 'q' && buffer[1] == '\n')
 				break;
+
+			if (buffer[0] == '\n')
+				continue;
 
 			ret = media_parse_execute_request(media, buffer);
 			if (!ret)
