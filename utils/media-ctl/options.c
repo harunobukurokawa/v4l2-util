@@ -51,6 +51,7 @@ static void usage(const char *argv0)
 	printf("-p, --print-topology	Print the device topology\n");
 	printf("    --print-dot		Print the device topology as a dot graph\n");
 	printf("-r, --reset		Reset all links to inactive\n");
+	printf("-R, --request [id]	Use the specified request or allocate a new one\n");
 	printf("-v, --verbose		Be verbose\n");
 	printf("\n");
 	printf("Links and formats are defined as\n");
@@ -105,6 +106,7 @@ static struct option opts[] = {
 	{"links", 1, 0, 'l'},
 	{"print-dot", 0, 0, OPT_PRINT_DOT},
 	{"print-topology", 0, 0, 'p'},
+	{"request", 2, 0, 'R'},
 	{"reset", 0, 0, 'r'},
 	{"verbose", 0, 0, 'v'},
 	{ },
@@ -112,6 +114,7 @@ static struct option opts[] = {
 
 int parse_cmdline(int argc, char **argv)
 {
+	char *endp;
 	int opt;
 
 	if (argc == 1) {
@@ -120,7 +123,7 @@ int parse_cmdline(int argc, char **argv)
 	}
 
 	/* parse options */
-	while ((opt = getopt_long(argc, argv, "d:e:f:hil:prvV:", opts, NULL)) != -1) {
+	while ((opt = getopt_long(argc, argv, "d:e:f:hil:prR::vV:", opts, NULL)) != -1) {
 		switch (opt) {
 		case 'd':
 			media_opts.devname = optarg;
@@ -159,6 +162,18 @@ int parse_cmdline(int argc, char **argv)
 
 		case 'r':
 			media_opts.reset = 1;
+			break;
+
+		case 'R':
+			if (optarg) {
+				media_opts.request_id = strtoul(optarg, &endp, 10);
+				if (*endp != '\0') {
+					printf("Invalid request ID `%s'\n", optarg);
+					return 1;
+				}
+			} else {
+				media_opts.request_id = -1;
+			}
 			break;
 
 		case 'v':

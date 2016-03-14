@@ -420,4 +420,56 @@ int media_parse_setup_link(struct media_device *media,
  */
 int media_parse_setup_links(struct media_device *media, const char *p);
 
+/**
+ * @brief Get the request ID associated with the media device
+ * @param media - media device
+ *
+ * @return the request ID associated with the device by a previous call to
+ * media_device_set_request() or media_device_alloc_request() or 0 if not
+ * request has been associated.
+ */
+__u32 media_device_get_request(struct media_device *media);
+
+/**
+ * @brief Associate a request with the media device
+ * @param media - media device
+ * @request - request ID
+ *
+ * Associate the request specified by its ID with the media device. All
+ * subsequent operations that operate on links or pads will affect the request
+ * instead of the device.
+ *
+ * To cancel the association call media_device_set_request() with the request ID
+ * set to 0
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+int media_device_set_request(struct media_device *media, __u32 request);
+
+/**
+ * @brief Allocate a request and associate it with the media device
+ * @param media - media device
+ *
+ * Allocate a new request and associate it with the media device. The request
+ * ID can be retrieved by calling media_device_get_request().
+ *
+ * Requests are reference-counted and will be automatically freed when not used
+ * anymore.
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+int media_device_alloc_request(struct media_device *media);
+
+/**
+ * @brief Queue the request associated with the media device
+ * @param media - media device
+ *
+ * Queue the request previously associated with the media device. The request
+ * association with the device will be cancelled, no new request is
+ * automatically allocated.
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+int media_device_queue_request(struct media_device *media);
+
 #endif
